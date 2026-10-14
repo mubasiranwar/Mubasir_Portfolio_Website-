@@ -11,9 +11,8 @@ export async function POST(request) {
       );
     }
 
-    // Forward the message to Formspree endpoint (free tier, sends directly to mubasiranwar70@gmail.com)
-    // or standard webhook
-    const response = await fetch('https://formspree.io/f/mldgpjzy', {
+    // Direct transmission to FormSubmit pointed to Mubasir's Gmail
+    const response = await fetch('https://formsubmit.co/ajax/mubasiranwar70@gmail.com', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,17 +21,23 @@ export async function POST(request) {
       body: JSON.stringify({
         name,
         email,
-        subject: subject || `Portfolio Message from ${name}`,
+        _subject: subject || `New Portfolio Inquiry from ${name}`,
         message,
         _replyto: email,
+        _template: 'table',
       }),
     });
 
-    if (response.ok) {
-      return NextResponse.json({ success: true, message: 'Message delivered successfully!' });
+    const data = await response.json();
+
+    if (response.ok && data.success !== 'false' && data.success !== false) {
+      return NextResponse.json({ success: true, message: 'Message delivered directly to Mubasir!' });
     } else {
-      // Fallback response with success so user can also use mailto directly
-      return NextResponse.json({ success: true, fallback: true });
+      // If activation is pending or error, provide specific message
+      return NextResponse.json({
+        success: false,
+        message: data.message || 'Form needs confirmation or temporary provider error.',
+      }, { status: 400 });
     }
   } catch (error) {
     console.error('Contact form submission error:', error);
