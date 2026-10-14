@@ -16,6 +16,8 @@ import {
   Send,
   User,
   MessageCircle,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 
 const iconMap = {
@@ -35,7 +37,7 @@ export default function Contact() {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
 
   const linkedinUrl =
     socialLinks.find((s) => s.name.toLowerCase() === 'linkedin')?.url ||
@@ -58,28 +60,38 @@ export default function Contact() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitStatus(null);
 
-    // Prepares direct mailto link with encoded subject and body to guarantee delivery without fake backend claims
-    const subjectEncoded = encodeURIComponent(
-      formData.subject || `Portfolio Message from ${formData.name || 'Visitor'}`
-    );
-    const bodyEncoded = encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
-    );
-    const mailtoUrl = `mailto:${personalInfo.email}?subject=${subjectEncoded}&body=${bodyEncoded}`;
+    try {
+      // First attempt to send via Next.js backend API
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    // Open client email software
-    window.location.href = mailtoUrl;
-
-    setTimeout(() => {
+      if (res.ok) {
+        setSubmitStatus('success');
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        throw new Error('Server returned an error');
+      }
+    } catch (err) {
+      // Fallback: Opens email client with pre-filled content to ensure 100% reliability
+      const subjectEncoded = encodeURIComponent(
+        formData.subject || `Portfolio Message from ${formData.name || 'Visitor'}`
+      );
+      const bodyEncoded = encodeURIComponent(
+        `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+      );
+      window.location.href = `mailto:${personalInfo.email}?subject=${subjectEncoded}&body=${bodyEncoded}`;
+      setSubmitStatus('fallback');
+    } finally {
       setIsSubmitting(false);
-      setSubmitStatus('sent');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      setTimeout(() => setSubmitStatus(null), 6000);
-    }, 600);
+    }
   };
 
   return (
@@ -95,7 +107,8 @@ export default function Contact() {
             Let&apos;s Build Something Together
           </h2>
           <p className="text-base sm:text-lg text-[#9CA3AF]">
-            Have an AI idea, a software challenge, or a research opportunity? Leave a message below or reach out directly.
+            Have an AI idea, a software challenge, or a research opportunity? Send a message directly to my inbox at{' '}
+            <span className="text-[#38BDF8] font-mono">{personalInfo.email}</span>.
           </p>
         </div>
 
@@ -110,7 +123,7 @@ export default function Contact() {
                   Send a Direct Message
                 </h3>
                 <p className="text-xs text-[#9CA3AF] mt-1">
-                  Compose your message to {personalInfo.email}
+                  Sends directly to {personalInfo.email}
                 </p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#111827] border border-[#1E293B] flex items-center justify-center text-[#38BDF8]">
@@ -132,7 +145,7 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="e.g. John Doe"
+                      placeholder="e.g. Alex Johnson"
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#111827] border border-[#1E293B] text-[#F3F4F6] placeholder-[#9CA3AF]/40 text-sm focus:outline-none focus:border-[#38BDF8] transition-colors"
                     />
                   </div>
@@ -167,7 +180,7 @@ export default function Contact() {
                   required
                   value={formData.subject}
                   onChange={handleInputChange}
-                  placeholder="e.g. AI Automation Project / Research Collaboration"
+                  placeholder="e.g. AI Automation Project / Engineering Role / Research Inquiry"
                   className="w-full px-4 py-2.5 rounded-xl bg-[#111827] border border-[#1E293B] text-[#F3F4F6] placeholder-[#9CA3AF]/40 text-sm focus:outline-none focus:border-[#38BDF8] transition-colors"
                 />
               </div>
@@ -193,15 +206,41 @@ export default function Contact() {
                   disabled={isSubmitting}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-[#38BDF8] text-[#0A0F1E] font-semibold text-sm hover:bg-[#0ea5e9] active:scale-[0.99] transition-all shadow-lg shadow-[#38BDF8]/10 cursor-pointer disabled:opacity-70"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Opening Mail Client...' : 'Send Message'}</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Transmitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Send to Mubasir</span>
+                    </>
+                  )}
                 </button>
               </div>
 
-              {submitStatus === 'sent' && (
-                <div className="mt-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>Your email client has been prepared with your message to mubasiranwar70@gmail.com!</span>
+              {submitStatus === 'success' && (
+                <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-start gap-3">
+                  <Check className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Message delivered successfully!</div>
+                    <div className="text-xs text-emerald-300/80 mt-0.5">
+                      Thank you for reaching out. Mubasir will review your email at {personalInfo.email} and respond shortly.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {submitStatus === 'fallback' && (
+                <div className="mt-4 p-4 rounded-xl bg-[#38BDF8]/10 border border-[#38BDF8]/30 text-[#38BDF8] text-sm flex items-start gap-3">
+                  <Check className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Email Client Opened!</div>
+                    <div className="text-xs text-[#9CA3AF] mt-0.5">
+                      Your message has been composed directly to {personalInfo.email}. Click send in your mail app to finish.
+                    </div>
+                  </div>
                 </div>
               )}
             </form>
@@ -233,7 +272,7 @@ export default function Contact() {
                     </a>
                     <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1.5 font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      Primary communication channel
+                      Direct inbox monitoring
                     </p>
                   </div>
                 </div>
@@ -253,7 +292,7 @@ export default function Contact() {
                   <a
                     href={`mailto:${personalInfo.email}`}
                     className="p-2 rounded-lg bg-[#38BDF8] text-[#0A0F1E] hover:bg-[#0ea5e9] transition-colors"
-                    title="Send email"
+                    title="Send email directly"
                   >
                     <Send className="w-4 h-4" />
                   </a>
