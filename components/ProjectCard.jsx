@@ -28,6 +28,11 @@ const getStatusBadge = (status) => {
         classes: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
         dot: 'bg-cyan-400 animate-pulse',
       };
+    case 'Live Deployment':
+      return {
+        classes: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+        dot: 'bg-emerald-400 animate-pulse',
+      };
     case 'Repository Available':
       return {
         classes: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
@@ -267,20 +272,36 @@ export default function ProjectCard({ project, onViewDetails, isFeatured = false
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" />
         </button>
 
-        {project.github && (
-          <a
-            href={project.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-[#151D2E] text-[#9CA3AF] border border-[#1E293B] hover:text-[#38BDF8] hover:border-[#38BDF8]/50 transition-colors"
-            aria-label={`View ${project.title} on GitHub`}
-          >
-            <Github className="w-3.5 h-3.5" />
-            <span>GitHub</span>
-            <ExternalLink className="w-3 h-3 text-[#9CA3AF]/70" />
-          </a>
-        )}
+        <div className="flex items-center gap-1.5">
+          {project.demo && (
+            <a
+              href={project.demo}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-[#38BDF8] text-[#0A0F1E] hover:bg-[#0ea5e9] transition-colors"
+              aria-label={`View live deployment of ${project.title}`}
+            >
+              <span>Live Demo</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+
+          {project.github && (
+            <a
+              href={project.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-[#151D2E] text-[#9CA3AF] border border-[#1E293B] hover:text-[#38BDF8] hover:border-[#38BDF8]/50 transition-colors"
+              aria-label={`View ${project.title} on GitHub`}
+            >
+              <Github className="w-3.5 h-3.5" />
+              <span>GitHub</span>
+              <ExternalLink className="w-3 h-3 text-[#9CA3AF]/70" />
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
